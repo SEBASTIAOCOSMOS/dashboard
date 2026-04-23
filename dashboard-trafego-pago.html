@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TrafficBoard · Dashboard de Tráfego Pago</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e28;
+    --bg4: #212534;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #f0f2f7;
+    --text2: #8b90a0;
+    --text3: #555c72;
+    --accent: #5b6af0;
+    --accent2: #7b88ff;
+    --meta: #1877F2;
+    --google: #EA4335;
+    --tiktok: #aaaaaa;
+    --linkedin: #0A66C2;
+    --green: #34d399;
+    --red: #f87171;
+    --amber: #fbbf24;
+    --sidebar-w: 220px;
+    --font: 'DM Sans', sans-serif;
+    --mono: 'DM Mono', monospace;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: transform 0.3s;
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 16px; height: 16px; fill: #fff; }
+  .logo-name { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+
+  .sidebar-nav { padding: 16px 12px; flex: 1; }
+  .nav-label { font-size: 10px; font-weight: 500; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; padding: 0 8px; margin-bottom: 6px; margin-top: 16px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+    transition: all 0.15s;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { background: rgba(91,106,240,0.15); color: var(--accent2); font-weight: 500; }
+  .nav-item svg { width: 16px; height: 16px; flex-shrink: 0; opacity: 0.7; }
+  .nav-item.active svg { opacity: 1; }
+
+  .sidebar-footer {
+    padding: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .user-row { display: flex; align-items: center; gap: 10px; }
+  .user-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; color: #fff;
+    flex-shrink: 0;
+  }
+  .user-name { font-size: 13px; font-weight: 500; color: var(--text); }
+  .user-role { font-size: 11px; color: var(--text3); }
+
+  /* ── Main ── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    position: sticky; top: 0; z-index: 50;
+    gap: 16px;
+  }
+  .topbar-left { display: flex; flex-direction: column; }
+  .topbar-title { font-size: 18px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+  .topbar-sub { font-size: 12px; color: var(--text3); margin-top: 1px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+
+  .period-group { display: flex; gap: 2px; background: var(--bg3); border-radius: 8px; padding: 3px; }
+  .period-btn {
+    padding: 5px 14px; border-radius: 6px; border: none;
+    background: transparent; color: var(--text2);
+    font-family: var(--font); font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .period-btn:hover { color: var(--text); }
+  .period-btn.active { background: var(--bg4); color: var(--text); font-weight: 500; }
+
+  .btn-refresh {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px;
+    border: 1px solid var(--border2);
+    background: transparent; color: var(--text2);
+    font-family: var(--font); font-size: 12px; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-refresh:hover { background: var(--bg3); color: var(--text); }
+  .btn-refresh svg { width: 14px; height: 14px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; color: var(--green);
+    background: rgba(52,211,153,0.1);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 20px; padding: 4px 10px;
+    font-weight: 500;
+  }
+  .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── Content ── */
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* ── Platform Tabs ── */
+  .platform-strip {
+    display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .ptab {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    color: var(--text2);
+    font-size: 13px; font-weight: 400;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .ptab:hover { border-color: var(--border2); color: var(--text); background: var(--bg3); }
+  .ptab.active { border-color: var(--accent); background: rgba(91,106,240,0.1); color: var(--accent2); font-weight: 500; }
+  .ptab-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .ptab-count { font-size: 11px; background: var(--bg4); padding: 1px 7px; border-radius: 20px; color: var(--text2); }
+
+  /* ── Metrics Grid ── */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    transition: border-color 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .metric-card:hover { border-color: var(--border2); }
+  .metric-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .metric-card:hover::before { opacity: 1; }
+  .metric-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: rgba(91,106,240,0.15);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+  }
+  .metric-icon svg { width: 14px; height: 14px; stroke: var(--accent2); fill: none; }
+  .metric-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 8px; }
+  .metric-delta {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; font-weight: 500;
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .delta-up { background: rgba(52,211,153,0.1); color: var(--green); }
+  .delta-down { background: rgba(248,113,113,0.1); color: var(--red); }
+
+  /* ── Charts ── */
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 16px; margin-bottom: 20px;
+  }
+  .chart-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .chart-header { margin-bottom: 16px; }
+  .chart-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 2px; }
+  .chart-sub { font-size: 12px; color: var(--text3); }
+  .chart-wrap { position: relative; width: 100%; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+  .leg-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text2); }
+  .leg-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .table-head-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .table-title { font-size: 13px; font-weight: 500; color: var(--text); }
+  .table-sub { font-size: 11px; color: var(--text3); }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead th {
+    text-align: left; padding: 10px 16px;
+    color: var(--text3); font-weight: 500;
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    background: var(--bg2);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg3); }
+  tbody td {
+    padding: 12px 16px;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+  tbody td:first-child { color: var(--text); font-weight: 500; }
+  tbody td.num { font-family: var(--mono); font-size: 12px; color: var(--text); }
+
+  .plat-cell { display: flex; align-items: center; gap: 6px; }
+  .plat-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 500;
+  }
+  .badge-dot { width: 5px; height: 5px; border-radius: 50%; }
+  .badge-green { background: rgba(52,211,153,0.1); color: var(--green); }
+  .badge-green .badge-dot { background: var(--green); }
+  .badge-red { background: rgba(248,113,113,0.1); color: var(--red); }
+  .badge-red .badge-dot { background: var(--red); }
+  .badge-amber { background: rgba(251,191,36,0.1); color: var(--amber); }
+  .badge-amber .badge-dot { background: var(--amber); }
+
+  /* ── Footer ── */
+  .footer {
+    padding: 16px 28px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 11px; color: var(--text3);
+  }
+  .api-status { display: flex; gap: 16px; }
+  .api-pill {
+    display: flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 11px;
+  }
+  .api-pill.connected { border-color: rgba(52,211,153,0.25); color: var(--green); }
+  .api-pill.demo { border-color: rgba(251,191,36,0.25); color: var(--amber); }
+  .api-indicator { width: 5px; height: 5px; border-radius: 50%; }
+  .api-pill.connected .api-indicator { background: var(--green); }
+  .api-pill.demo .api-indicator { background: var(--amber); }
+
+  /* ── Mobile ── */
+  .menu-btn {
+    display: none;
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px; cursor: pointer;
+    color: var(--text2);
+  }
+  .menu-btn svg { width: 18px; height: 18px; display: block; }
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6); z-index: 90;
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay.open { display: block; }
+    .main { margin-left: 0; }
+    .menu-btn { display: flex; }
+    .charts-row { grid-template-columns: 1fr; }
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .content { padding: 16px; }
+    .topbar { padding: 12px 16px; }
+  }
+  @media (max-width: 500px) {
+    .metrics-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* Animate in */
+  .fadein { animation: fadein 0.4s ease both; }
+  @keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.10s; }
+  .stagger-3 { animation-delay: 0.15s; }
+  .stagger-4 { animation-delay: 0.20s; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">
+        <svg viewBox="0 0 16 16"><path d="M2 10 L8 2 L14 10 L11 10 L11 14 L5 14 L5 10 Z"/></svg>
+      </div>
+      <div>
+        <div class="logo-name">TrafficBoard</div>
+        <div class="logo-sub">Painel de tráfego pago</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-label">Principal</div>
+    <div class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      Visão geral
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Campanhas
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Histórico
+    </div>
+
+    <div class="nav-label">Plataformas</div>
+    <div class="nav-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--meta);flex-shrink:0"></span> Meta Ads</div>
+    <div class="nav-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--google);flex-shrink:0"></span> Google Ads</div>
+    <div class="nav-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--tiktok);flex-shrink:0"></span> TikTok Ads</div>
+    <div class="nav-item"><span style="width:8px;height:8px;border-radius:50%;background:var(--linkedin);flex-shrink:0"></span> LinkedIn Ads</div>
+
+    <div class="nav-label">Config.</div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 0 0 4.93 19.07M4.93 4.93A10 10 0 0 1 19.07 19.07"/></svg>
+      Integrações de API
+    </div>
+    <div class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Meus clientes
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="user-avatar">AG</div>
+      <div>
+        <div class="user-name">Agência Digital</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Main -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <button class="menu-btn" onclick="openSidebar()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-left">
+        <div class="topbar-title">Visão geral</div>
+        <div class="topbar-sub" id="date-display"></div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="live-badge"><span class="live-dot"></span> Demo</div>
+      <div class="period-group">
+        <button class="period-btn" onclick="setPeriod(7,this)">7d</button>
+        <button class="period-btn active" onclick="setPeriod(30,this)">30d</button>
+        <button class="period-btn" onclick="setPeriod(90,this)">90d</button>
+      </div>
+      <button class="btn-refresh" onclick="refreshData()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+        Atualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- Platform Tabs -->
+    <div class="platform-strip" id="platform-strip">
+      <div class="ptab active" onclick="setPlatform('all',this)"><span class="ptab-dot" style="background:#8b90a0"></span> Todas as plataformas <span class="ptab-count">4</span></div>
+      <div class="ptab" onclick="setPlatform('meta',this)"><span class="ptab-dot" style="background:var(--meta)"></span> Meta Ads</div>
+      <div class="ptab" onclick="setPlatform('google',this)"><span class="ptab-dot" style="background:var(--google)"></span> Google Ads</div>
+      <div class="ptab" onclick="setPlatform('tiktok',this)"><span class="ptab-dot" style="background:var(--tiktok)"></span> TikTok Ads</div>
+      <div class="ptab" onclick="setPlatform('linkedin',this)"><span class="ptab-dot" style="background:var(--linkedin)"></span> LinkedIn Ads</div>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metrics-grid fadein" id="metrics-grid"></div>
+
+    <!-- Charts row 1 -->
+    <div class="charts-row fadein stagger-2">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Investimento vs. receita gerada</div>
+          <div class="chart-sub">Comparativo semanal no período</div>
+        </div>
+        <div class="legend-row">
+          <span class="leg-item"><span class="leg-sq" style="background:#5b6af0"></span>Investimento</span>
+          <span class="leg-item"><span class="leg-sq" style="background:#34d399"></span>Receita</span>
+        </div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-roas" role="img" aria-label="Gráfico investimento vs receita por semana"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Distribuição de investimento</div>
+          <div class="chart-sub">Por plataforma no período</div>
+        </div>
+        <div class="legend-row" id="pie-legend"></div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-pie" role="img" aria-label="Distribuição de investimento por plataforma"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Charts row 2 -->
+    <div class="charts-row fadein stagger-3">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">Volume de leads por plataforma</div>
+          <div class="chart-sub">Total de conversões no período</div>
+        </div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-leads" role="img" aria-label="Leads por plataforma"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-title">CPL ao longo do tempo</div>
+          <div class="chart-sub">Custo por lead (R$) por semana</div>
+        </div>
+        <div class="legend-row" id="cpl-legend"></div>
+        <div class="chart-wrap" style="height:148px"><canvas id="chart-cpl" role="img" aria-label="CPL por semana por plataforma"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card fadein stagger-4">
+      <div class="table-head-bar">
+        <div>
+          <div class="table-title">Performance por campanha</div>
+          <div class="table-sub" id="camp-count"></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Campanha</th>
+              <th>Plataforma</th>
+              <th>Investimento</th>
+              <th>Impressões</th>
+              <th>Cliques</th>
+              <th>CTR</th>
+              <th>Leads</th>
+              <th>CPL</th>
+              <th>ROAS</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="camp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>TrafficBoard · Dashboard de Tráfego Pago · Dados demonstrativos</span>
+    <div class="api-status">
+      <div class="api-pill demo"><span class="api-indicator"></span>Meta API · Demo</div>
+      <div class="api-pill demo"><span class="api-indicator"></span>Google API · Demo</div>
+      <div class="api-pill demo"><span class="api-indicator"></span>TikTok API · Demo</div>
+      <div class="api-pill demo"><span class="api-indicator"></span>LinkedIn API · Demo</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+const PLAT_COLORS = { Meta:'#1877F2', Google:'#EA4335', TikTok:'#aaaaaa', LinkedIn:'#0A66C2' };
+
+const DATA = {
+  all: {
+    metrics: [
+      { label:'Investimento total', value:'R$ 42.800', delta:'+12%', up:true, icon:'dollar' },
+      { label:'Receita gerada', value:'R$ 198.400', delta:'+23%', up:true, icon:'trending' },
+      { label:'ROAS médio', value:'4,63×', delta:'+8%', up:true, icon:'roas' },
+      { label:'Total de leads', value:'1.847', delta:'+18%', up:true, icon:'leads' },
+      { label:'CPL médio', value:'R$ 23,18', delta:'-5%', up:true, icon:'cpl' },
+      { label:'CTR médio', value:'3,42%', delta:'+0,4pp', up:true, icon:'ctr' },
+    ],
+    campaigns: [
+      { name:'Prospecção - Lookalike', plat:'Meta', inv:'R$ 8.200', imp:'412K', clk:'14.832', ctr:'3,60%', leads:390, cpl:'R$ 21,03', roas:'5,1×', status:'Ativo' },
+      { name:'Retargeting 30d', plat:'Meta', inv:'R$ 4.100', imp:'98K', clk:'5.292', ctr:'5,40%', leads:218, cpl:'R$ 18,81', roas:'6,8×', status:'Ativo' },
+      { name:'Search - Marca', plat:'Google', inv:'R$ 6.500', imp:'87K', clk:'9.744', ctr:'11,20%', leads:312, cpl:'R$ 20,83', roas:'5,4×', status:'Ativo' },
+      { name:'Search - Genérico', plat:'Google', inv:'R$ 9.800', imp:'215K', clk:'8.170', ctr:'3,80%', leads:284, cpl:'R$ 34,51', roas:'3,2×', status:'Pausado' },
+      { name:'TopView - Lançamento', plat:'TikTok', inv:'R$ 7.200', imp:'680K', clk:'21.420', ctr:'3,15%', leads:441, cpl:'R$ 16,33', roas:'4,1×', status:'Ativo' },
+      { name:'Spark Ads', plat:'TikTok', inv:'R$ 3.600', imp:'290K', clk:'9.860', ctr:'3,40%', leads:102, cpl:'R$ 35,29', roas:'2,8×', status:'Atenção' },
+      { name:'Lead Gen - B2B', plat:'LinkedIn', inv:'R$ 7.900', imp:'64K', clk:'1.408', ctr:'2,20%', leads:100, cpl:'R$ 79,00', roas:'3,9×', status:'Ativo' },
+    ],
+    roas: { inv:[8200,10400,11600,12600], rev:[34000,48000,56000,60400] },
+    pie: [{l:'Meta',v:12300,c:'#1877F2'},{l:'Google',v:16300,c:'#EA4335'},{l:'TikTok',v:10800,c:'#aaaaaa'},{l:'LinkedIn',v:7900,c:'#0A66C2'}],
+    leads: [{l:'Meta',v:608,c:'#1877F2'},{l:'Google',v:596,c:'#EA4335'},{l:'TikTok',v:543,c:'#aaaaaa'},{l:'LinkedIn',v:100,c:'#0A66C2'}],
+    cpl: {
+      datasets: [
+        { label:'Meta', data:[22,21,20,20], color:'#1877F2' },
+        { label:'Google', data:[32,29,27,26], color:'#EA4335' },
+        { label:'TikTok', data:[24,21,18,17], color:'#aaaaaa' },
+        { label:'LinkedIn', data:[85,82,79,79], color:'#0A66C2' },
+      ]
+    }
+  },
+  meta: {
+    metrics: [
+      { label:'Investimento', value:'R$ 12.300', delta:'+9%', up:true, icon:'dollar' },
+      { label:'Receita', value:'R$ 71.340', delta:'+21%', up:true, icon:'trending' },
+      { label:'ROAS', value:'5,80×', delta:'+11%', up:true, icon:'roas' },
+      { label:'Leads', value:'608', delta:'+14%', up:true, icon:'leads' },
+      { label:'CPL', value:'R$ 20,23', delta:'-7%', up:true, icon:'cpl' },
+      { label:'CTR', value:'4,50%', delta:'+0,6pp', up:true, icon:'ctr' },
+    ],
+    campaigns: [
+      { name:'Prospecção - Lookalike', plat:'Meta', inv:'R$ 8.200', imp:'412K', clk:'14.832', ctr:'3,60%', leads:390, cpl:'R$ 21,03', roas:'5,1×', status:'Ativo' },
+      { name:'Retargeting 30d', plat:'Meta', inv:'R$ 4.100', imp:'98K', clk:'5.292', ctr:'5,40%', leads:218, cpl:'R$ 18,81', roas:'6,8×', status:'Ativo' },
+    ],
+    roas:{inv:[2400,3100,3400,3400],rev:[14200,18000,20400,18740]},
+    pie:[{l:'Meta',v:12300,c:'#1877F2'}],
+    leads:[{l:'Meta',v:608,c:'#1877F2'}],
+    cpl:{datasets:[{label:'Meta',data:[22,21,20,20],color:'#1877F2'}]}
+  },
+  google: {
+    metrics: [
+      { label:'Investimento', value:'R$ 16.300', delta:'+15%', up:true, icon:'dollar' },
+      { label:'Receita', value:'R$ 68.460', delta:'+19%', up:true, icon:'trending' },
+      { label:'ROAS', value:'4,20×', delta:'+5%', up:true, icon:'roas' },
+      { label:'Leads', value:'596', delta:'+10%', up:true, icon:'leads' },
+      { label:'CPL', value:'R$ 27,35', delta:'-3%', up:true, icon:'cpl' },
+      { label:'CTR', value:'7,50%', delta:'+1,2pp', up:true, icon:'ctr' },
+    ],
+    campaigns: [
+      { name:'Search - Marca', plat:'Google', inv:'R$ 6.500', imp:'87K', clk:'9.744', ctr:'11,20%', leads:312, cpl:'R$ 20,83', roas:'5,4×', status:'Ativo' },
+      { name:'Search - Genérico', plat:'Google', inv:'R$ 9.800', imp:'215K', clk:'8.170', ctr:'3,80%', leads:284, cpl:'R$ 34,51', roas:'3,2×', status:'Pausado' },
+    ],
+    roas:{inv:[3200,3900,4600,4600],rev:[11000,16300,20000,21160]},
+    pie:[{l:'Google',v:16300,c:'#EA4335'}],
+    leads:[{l:'Google',v:596,c:'#EA4335'}],
+    cpl:{datasets:[{label:'Google',data:[32,29,27,26],color:'#EA4335'}]}
+  },
+  tiktok: {
+    metrics: [
+      { label:'Investimento', value:'R$ 10.800', delta:'+22%', up:true, icon:'dollar' },
+      { label:'Receita', value:'R$ 41.040', delta:'+31%', up:true, icon:'trending' },
+      { label:'ROAS', value:'3,80×', delta:'+7%', up:true, icon:'roas' },
+      { label:'Leads', value:'543', delta:'+28%', up:true, icon:'leads' },
+      { label:'CPL', value:'R$ 19,89', delta:'-11%', up:true, icon:'cpl' },
+      { label:'CTR', value:'3,25%', delta:'+0,3pp', up:true, icon:'ctr' },
+    ],
+    campaigns: [
+      { name:'TopView - Lançamento', plat:'TikTok', inv:'R$ 7.200', imp:'680K', clk:'21.420', ctr:'3,15%', leads:441, cpl:'R$ 16,33', roas:'4,1×', status:'Ativo' },
+      { name:'Spark Ads', plat:'TikTok', inv:'R$ 3.600', imp:'290K', clk:'9.860', ctr:'3,40%', leads:102, cpl:'R$ 35,29', roas:'2,8×', status:'Atenção' },
+    ],
+    roas:{inv:[1800,2400,3000,3600],rev:[6200,9600,12800,12440]},
+    pie:[{l:'TikTok',v:10800,c:'#aaaaaa'}],
+    leads:[{l:'TikTok',v:543,c:'#aaaaaa'}],
+    cpl:{datasets:[{label:'TikTok',data:[24,21,18,17],color:'#aaaaaa'}]}
+  },
+  linkedin: {
+    metrics: [
+      { label:'Investimento', value:'R$ 7.900', delta:'+6%', up:true, icon:'dollar' },
+      { label:'Receita', value:'R$ 30.810', delta:'+14%', up:true, icon:'trending' },
+      { label:'ROAS', value:'3,90×', delta:'+3%', up:true, icon:'roas' },
+      { label:'Leads', value:'100', delta:'+8%', up:true, icon:'leads' },
+      { label:'CPL', value:'R$ 79,00', delta:'+2%', up:false, icon:'cpl' },
+      { label:'CTR', value:'2,20%', delta:'-0,1pp', up:false, icon:'ctr' },
+    ],
+    campaigns: [
+      { name:'Lead Gen - B2B', plat:'LinkedIn', inv:'R$ 7.900', imp:'64K', clk:'1.408', ctr:'2,20%', leads:100, cpl:'R$ 79,00', roas:'3,9×', status:'Ativo' },
+    ],
+    roas:{inv:[1600,1900,2200,2200],rev:[7000,8200,9000,6610]},
+    pie:[{l:'LinkedIn',v:7900,c:'#0A66C2'}],
+    leads:[{l:'LinkedIn',v:100,c:'#0A66C2'}],
+    cpl:{datasets:[{label:'LinkedIn',data:[85,82,79,79],color:'#0A66C2'}]}
+  }
+};
+
+const ICONS = {
+  dollar:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
+  trending:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+  roas:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>`,
+  leads:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  cpl:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
+  ctr:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`,
+};
+
+let currentPlatform = 'all';
+let charts = {};
+const weeks = ['Sem 1','Sem 2','Sem 3','Sem 4'];
+
+// Date
+const d = new Date();
+document.getElementById('date-display').textContent =
+  d.toLocaleDateString('pt-BR',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+
+function setPeriod(n, el) {
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function setPlatform(p, el) {
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  currentPlatform = p;
+  renderAll();
+}
+
+function refreshData() {
+  renderAll();
+}
+
+function renderMetrics() {
+  const d = DATA[currentPlatform];
+  document.getElementById('metrics-grid').innerHTML = d.metrics.map(m => `
+    <div class="metric-card">
+      <div class="metric-icon">${ICONS[m.icon]||''}</div>
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-value">${m.value}</div>
+      <span class="metric-delta ${m.up?'delta-up':'delta-down'}">${m.up?'↑':'↓'} ${m.delta} vs anterior</span>
+    </div>
+  `).join('');
+}
+
+function renderTable() {
+  const rows = DATA[currentPlatform].campaigns;
+  document.getElementById('camp-count').textContent = rows.length + ' campanha' + (rows.length !== 1 ? 's' : '') + ' · período selecionado';
+  document.getElementById('camp-tbody').innerHTML = rows.map(r => {
+    const sc = r.status==='Ativo' ? 'badge-green' : r.status==='Pausado' ? 'badge-red' : 'badge-amber';
+    const col = PLAT_COLORS[r.plat] || '#888';
+    return `<tr>
+      <td>${r.name}</td>
+      <td><span class="plat-cell"><span class="plat-dot" style="background:${col}"></span>${r.plat}</span></td>
+      <td class="num">${r.inv}</td>
+      <td class="num">${r.imp}</td>
+      <td class="num">${r.clk}</td>
+      <td class="num">${r.ctr}</td>
+      <td class="num">${r.leads}</td>
+      <td class="num">${r.cpl}</td>
+      <td class="num">${r.roas}</td>
+      <td><span class="badge ${sc}"><span class="badge-dot"></span>${r.status}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+function renderCharts() {
+  const d = DATA[currentPlatform];
+
+  destroyChart('roas');
+  charts.roas = new Chart(document.getElementById('chart-roas'), {
+    type: 'bar',
+    data: {
+      labels: weeks,
+      datasets: [
+        { label:'Investimento', data: d.roas.inv, backgroundColor:'#5b6af0', borderRadius:4 },
+        { label:'Receita', data: d.roas.rev, backgroundColor:'#34d399', borderRadius:4 },
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555c72',font:{family:'DM Sans',size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555c72',font:{family:'DM Sans',size:11}, callback:v=>'R$'+(v/1000).toFixed(0)+'K'} }
+      }
+    }
+  });
+
+  destroyChart('pie');
+  document.getElementById('pie-legend').innerHTML = d.pie.map(x=>`<span class="leg-item"><span class="leg-sq" style="background:${x.c}"></span>${x.l}</span>`).join('');
+  charts.pie = new Chart(document.getElementById('chart-pie'), {
+    type:'doughnut',
+    data:{ labels:d.pie.map(x=>x.l), datasets:[{ data:d.pie.map(x=>x.v), backgroundColor:d.pie.map(x=>x.c), borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, cutout:'65%' }
+  });
+
+  destroyChart('leads');
+  charts.leads = new Chart(document.getElementById('chart-leads'), {
+    type:'bar',
+    data:{ labels:d.leads.map(x=>x.l), datasets:[{ data:d.leads.map(x=>x.v), backgroundColor:d.leads.map(x=>x.c), borderRadius:4 }] },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      indexAxis:'y',
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555c72',font:{family:'DM Sans',size:11}} },
+        y:{ grid:{display:false}, ticks:{color:'#8b90a0',font:{family:'DM Sans',size:11}} }
+      }
+    }
+  });
+
+  destroyChart('cpl');
+  const cplDs = d.cpl.datasets;
+  document.getElementById('cpl-legend').innerHTML = cplDs.map(x=>`<span class="leg-item"><span class="leg-sq" style="background:${x.color}"></span>${x.label}</span>`).join('');
+  charts.cpl = new Chart(document.getElementById('chart-cpl'), {
+    type:'line',
+    data:{
+      labels: weeks,
+      datasets: cplDs.map(x=>({
+        label:x.label, data:x.data,
+        borderColor:x.color, backgroundColor:'transparent',
+        tension:0.4, pointRadius:3, pointBackgroundColor:x.color, borderWidth:2
+      }))
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555c72',font:{family:'DM Sans',size:11}} },
+        y:{ grid:{color:'rgba(255,255,255,0.04)'}, ticks:{color:'#555c72',font:{family:'DM Sans',size:11}, callback:v=>'R$'+v} }
+      }
+    }
+  });
+}
+
+function renderAll() {
+  renderMetrics();
+  renderTable();
+  renderCharts();
+}
+
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+renderAll();
+</script>
+</body>
+</html>
